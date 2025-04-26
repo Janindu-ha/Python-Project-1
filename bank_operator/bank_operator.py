@@ -1,74 +1,66 @@
-from account.user import User
-from account.bank_account import BankAccount, SavingsAccount, CurrentAccount, StudentAccount
+from rich.console import Console
+from rich.table import Table
+from rich.prompt import Prompt
+from bank_operator import bank_operator
 
-users = []
+console = Console()
 
-def create_user():
-    name = input("Enter name: ")
-    email = input("Enter email: ")
-    user = User(name, email)
-    if not user.is_valid_email(email):
-        print("Email is invalid!")
-    users.append(user)
-    print(f"User {name} created.\n")
+def menu():
+    while True:
+        console.clear()
 
-def list_users():
-    for i, user in enumerate(users):
-        print(f"{i+1}. {user}")
+        table = Table(title="\U0001F3E6 Bank System Menu", title_style="bold magenta")
 
-def create_account():
-    list_users()
-    idx = int(input("Select user number: ")) - 1
-    print("Account Type:")
-    print("1. Savings Account")
-    print("2. Students Account")
-    print("3. Current Account")
-    account_choice = int(input("Enter your choice (1, 2, 3): "))
-    amount = float(input("Enter initial deposit: "))
+        table.add_column("Option", style="cyan", justify="center")
+        table.add_column("Description", style="white")
 
-    if account_choice == 1:
-        account = SavingsAccount(amount)
-    elif account_choice == 2:
-        account = StudentAccount(amount)
-    elif account_choice == 3:
-        account = CurrentAccount(amount)
-    else:
-        print("Invalid choice!")
-        account = BankAccount(amount)
+        table.add_row("1", "Create User")
+        table.add_row("2", "List Users")
+        table.add_row("3", "Add Account")
+        table.add_row("4", "Deposit")
+        table.add_row("5", "Withdraw")
+        table.add_row("6", "View Transactions")
+        table.add_row("7", "Exit")
 
-    users[idx].add_account(account)
-    print(f"{account.get_account_type()} added!\n")
+        console.print(table)
 
-def deposit_money():
-    list_users()
-    idx = int(input("Select user: ")) - 1
-    user = users[idx]
-    for i, acc in enumerate(user.accounts):
-        print(f"{i+1}. Balance: Rs. {acc.get_balance()}")
-    acc_idx = int(input("Select account: ")) - 1
-    amount = float(input("Enter amount to deposit: "))  # Fixed bug
-    user.accounts[acc_idx].deposit(amount)
+        choice = Prompt.ask("\U0001F449 Choose option", choices=[str(i) for i in range(1, 8)], default="7")
 
-def withdraw_money():
-    list_users()
-    idx = int(input("Select user: ")) - 1
-    user = users[idx]
-    for i, acc in enumerate(user.accounts):
-        print(f"{i+1}. Balance: Rs. {acc.get_balance()}")
-    acc_idx = int(input("Select account: ")) - 1
-    amount = float(input("Enter amount to withdraw: "))
-    try:
-        user.accounts[acc_idx].withdraw(amount)
-        print("Withdrawal successful.\n")
-    except ValueError as e:
-        print(f"Error: {e}\n")
+        if choice == '1':
+            bank_operator.create_user()
+        elif choice == '2':
+            bank_operator.list_users()
+        elif choice == '3':
+            if not bank_operator.users:
+                console.print("[red]No users available. Please create a user first.[/red]")
+                Prompt.ask("Press Enter to continue")
+                continue
+            bank_operator.create_account()
+        elif choice == '4':
+            if not bank_operator.users:
+                console.print("[red]No users available. Please create a user first.[/red]")
+                Prompt.ask("Press Enter to continue")
+                continue
+            if not bank_operator.deposit_money():
+                console.print("[red]Deposit failed. Please try again.[/red]")
+                Prompt.ask("Press Enter to continue")
+        elif choice == '5':
+            if not bank_operator.users:
+                console.print("[red]No users available. Please create a user first.[/red]")
+                Prompt.ask("Press Enter to continue")
+                continue
+            if not bank_operator.withdraw_money():
+                console.print("[red]Withdrawal failed. Please try again.[/red]")
+                Prompt.ask("Press Enter to continue")
+        elif choice == '6':
+            if not bank_operator.users:
+                console.print("[red]No users available. Please create a user first.[/red]")
+                Prompt.ask("Press Enter to continue")
+                continue
+            bank_operator.view_transactions()
+        elif choice == '7':
+            console.print("\n\U0001F44B Exiting... Thank you for using the Bank System!", style="bold green")
+            break
 
-def view_transactions():
-    list_users()
-    idx = int(input("Select user: ")) - 1
-    user = users[idx]
-    for i, acc in enumerate(user.accounts):
-        print(f"\n{acc.get_account_type()} {i+1} - Balance: Rs. {acc.get_balance()}")
-        for tx in acc.get_transaction_history():
-            print(tx)
-
+if __name__ == "__main__":
+    menu()
