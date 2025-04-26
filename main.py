@@ -1,48 +1,168 @@
-from rich.console import Console
-from rich.table import Table
-from rich.prompt import Prompt
-from bank_operator import bank_operator
+from account.user import User
+from account.bank_account import BankAccount, SavingsAccount, CurrentAccount, StudentAccount
 
-console = Console()
+users = []
 
+def create_user():
+    name = input("Enter name: ")
+    email = input("Enter email: ")
+    user = User(name, email)
+    if not user.is_valid_email(email):
+        print("Email is invalid!")
+    users.append(user)
+    print(f"User {name} created.\n")
 
-def menu():
-    while True:
-        console.clear()
+def list_users():
+    for i, user in enumerate(users):
+        print(f"{i+1}. {user}")
 
-        table = Table(title="🏦 Bank System Menu", title_style="bold magenta")
+def create_account():
+    if not users:
+        print("No users available. Please create a user first.\n")
+        return
 
-        table.add_column("Option", style="cyan", justify="center")
-        table.add_column("Description", style="white")
+    list_users()
+    try:
+        idx = int(input("Select user number: ")) - 1
+        if idx < 0 or idx >= len(users):
+            print("Invalid user selection.\n")
+            return
+    except ValueError:
+        print("Invalid input. Please enter a number.\n")
+        return
 
-        table.add_row("1", "Create User")
-        table.add_row("2", "List Users")
-        table.add_row("3", "Add Account")
-        table.add_row("4", "Deposit")
-        table.add_row("5", "Withdraw")
-        table.add_row("6", "View Transactions")
-        table.add_row("7", "Exit")
+    print("Account Type:")
+    print("1. Savings Account")
+    print("2. Students Account")
+    print("3. Current Account")
+    try:
+        account_choice = int(input("Enter your choice (1, 2, 3): "))
+    except ValueError:
+        print("Invalid input. Please enter a number.\n")
+        return
 
-        console.print(table)
+    amount = float(input("Enter initial deposit: "))
 
-        choice = Prompt.ask("👉 Choose option", choices=[str(i) for i in range(1, 8)], default="7")
+    if account_choice == 1:
+        account = SavingsAccount(amount)
+    elif account_choice == 2:
+        account = StudentAccount(amount)
+    elif account_choice == 3:
+        account = CurrentAccount(amount)
+    else:
+        print("Invalid account type!\n")
+        return
 
-        if choice == '1':
-            bank_operator.create_user()
-        elif choice == '2':
-            bank_operator.list_users()
-        elif choice == '3':
-            bank_operator.create_account()
-        elif choice == '4':
-            bank_operator.deposit_money()
-        elif choice == '5':
-            bank_operator.withdraw_money()
-        elif choice == '6':
-            bank_operator.view_transactions()
-        elif choice == '7':
-            console.print("\n👋 Exiting... Thank you for using the Bank System!", style="bold green")
-            break
+    users[idx].add_account(account)
+    print(f"{account.get_account_type()} added!\n")
 
+def deposit_money():
+    if not users:
+        print("No users available. Please create a user first.\n")
+        return False
 
-if __name__ == "__main__":
-    menu()
+    list_users()
+    try:
+        idx = int(input("Select user: ")) - 1
+        if idx < 0 or idx >= len(users):
+            print("Invalid user selection.\n")
+            return False
+    except ValueError:
+        print("Invalid input. Please enter a number.\n")
+        return False
+
+    user = users[idx]
+    if not user.accounts:
+        print("This user has no accounts.\n")
+        return False
+
+    for i, acc in enumerate(user.accounts):
+        print(f"{i+1}. Balance: Rs. {acc.get_balance()}")
+    try:
+        acc_idx = int(input("Select account: ")) - 1
+        if acc_idx < 0 or acc_idx >= len(user.accounts):
+            print("Invalid account selection.\n")
+            return False
+    except ValueError:
+        print("Invalid input. Please enter a number.\n")
+        return False
+
+    try:
+        amount = float(input("Enter amount to deposit: "))
+    except ValueError:
+        print("Invalid input. Please enter a valid amount.\n")
+        return False
+
+    user.accounts[acc_idx].deposit(amount)
+    print("Deposit successful.\n")
+    return True
+
+def withdraw_money():
+    if not users:
+        print("No users available. Please create a user first.\n")
+        return False
+
+    list_users()
+    try:
+        idx = int(input("Select user: ")) - 1
+        if idx < 0 or idx >= len(users):
+            print("Invalid user selection.\n")
+            return False
+    except ValueError:
+        print("Invalid input. Please enter a number.\n")
+        return False
+
+    user = users[idx]
+    if not user.accounts:
+        print("This user has no accounts.\n")
+        return False
+
+    for i, acc in enumerate(user.accounts):
+        print(f"{i+1}. Balance: Rs. {acc.get_balance()}")
+    try:
+        acc_idx = int(input("Select account: ")) - 1
+        if acc_idx < 0 or acc_idx >= len(user.accounts):
+            print("Invalid account selection.\n")
+            return False
+    except ValueError:
+        print("Invalid input. Please enter a number.\n")
+        return False
+
+    try:
+        amount = float(input("Enter amount to withdraw: "))
+    except ValueError:
+        print("Invalid input. Please enter a valid amount.\n")
+        return False
+
+    try:
+        user.accounts[acc_idx].withdraw(amount)
+        print("Withdrawal successful.\n")
+        return True
+    except ValueError as e:
+        print(f"Error: {e}\n")
+        return False
+
+def view_transactions():
+    if not users:
+        print("No users available. Please create a user first.\n")
+        return
+
+    list_users()
+    try:
+        idx = int(input("Select user: ")) - 1
+        if idx < 0 or idx >= len(users):
+            print("Invalid user selection.\n")
+            return
+    except ValueError:
+        print("Invalid input. Please enter a number.\n")
+        return
+
+    user = users[idx]
+    if not user.accounts:
+        print("This user has no accounts.\n")
+        return
+
+    for i, acc in enumerate(user.accounts):
+        print(f"\n{acc.get_account_type()} {i+1} - Balance: Rs. {acc.get_balance()}")
+        for tx in acc.get_transaction_history():
+            print(tx)
